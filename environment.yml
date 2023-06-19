@@ -1,7 +1,10 @@
 dependencies:
   - bokeh
+  - nibabel
+  - numpy
   - pandas
   - scipy
+  - sttatsmodels
   - pip
   - pip:
     - jupyter-server-proxy
