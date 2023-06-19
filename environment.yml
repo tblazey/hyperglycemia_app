@@ -4,7 +4,7 @@ dependencies:
   - numpy
   - pandas
   - scipy
-  - sttatsmodels
+  - statsmodels
   - pip
   - pip:
     - jupyter-server-proxy
