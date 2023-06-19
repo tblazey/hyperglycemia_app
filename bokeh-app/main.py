@@ -1,89 +1,91 @@
-from os.path import join, dirname
-import datetime
+#Load libs
+from bokeh.models import TabPanel, Tabs
+from bokeh_utils import *
+import os
 
-import pandas as pd
-from scipy.signal import savgol_filter
+#Prep
+app_dir = os.path.dirname(os.path.realpath(__file__))
+data_dir = f'{app_dir}/data'
 
-from bokeh.io import curdoc
-from bokeh.layouts import row, column
-from bokeh.models import ColumnDataSource, DataRange1d, Select
-from bokeh.palettes import Blues4
-from bokeh.plotting import figure
+#CMRglc figure
+fig_2 = three_row(f'{data_dir}/template_2mm_masked.nii.gz', 
+                  [f'{data_dir}/cmrglc_basal.nii.gz',
+                  f'{data_dir}/cmrglc_hypergly_coef.nii.gz'],
+                  f'{data_dir}/cmrglc_hypergly_logp_fdr_05.nii.gz',
+                  "CMRglc", "uMol/hg/min",
+                  info_path = f'{data_dir}/cmrglc_info.csv',
+                  reg_path = f'{data_dir}/cmrglc_wmparc.nii.gz',
+                  over_titles=['CMRglc: Eugly', 'Hyper. - Eugly.'],
+                  over_range = [[10, 52], [-15, 15]],
+                  over_thresh = [False, True],
+                  over_palettes = ['Plasma', 'RdBu'],
+                  over_mode = ['absolue', 'absolute'],
+                  roi_path=f'{data_dir}/winner_wmparc_comb_on_MNI152_2mm_masked.nii.gz',
+                  names_path=f'{data_dir}/wmparc_names.txt')
 
-STATISTICS = ['record_min_temp', 'actual_min_temp', 'average_min_temp', 'average_max_temp', 'actual_max_temp', 'record_max_temp']
+#Oxygen figure
+fig_3 = three_row(f'{data_dir}/template_2mm_masked.nii.gz', 
+                  [f'{data_dir}/oxy_suvr_basal.nii.gz',
+                  f'{data_dir}/oxy_suvr_hypergly_coef.nii.gz'],
+                  f'{data_dir}/oxy_suvr_hypergly_logp_fdr_05.nii.gz',
+                  "CMRO2", "SUVR",
+                  info_path=f'{data_dir}/oxy_suvr_info.csv',
+                  reg_path=f'{data_dir}/all_om_suvr_po.nii.gz',
+                  over_range = [[0.4, 1.4], [-0.1, 0.1]], 
+                  over_thresh = [False, True],
+                  over_palettes = ['Plasma', 'RdBu'],
+                  over_titles= ['CMRO2: Eugly', 'Hyper. - Eugly.'],
+                  over_mode = ['absolue', 'absolute'],
+                  roi_path=f'{data_dir}/winner_wmparc_comb_on_MNI152_2mm_masked.nii.gz',
+                  names_path=f'{data_dir}/wmparc_names.txt')
 
-def get_dataset(src, name, distribution):
-    df = src[src.airport == name].copy()
-    del df['airport']
-    df['date'] = pd.to_datetime(df.date)
-    # timedelta here instead of pd.DateOffset to avoid pandas bug < 0.18 (Pandas issue #11925)
-    df['left'] = df.date - datetime.timedelta(days=0.5)
-    df['right'] = df.date + datetime.timedelta(days=0.5)
-    df = df.set_index(['date'])
-    df.sort_index(inplace=True)
-    if distribution == 'Smoothed':
-        window, order = 51, 3
-        for key in STATISTICS:
-            df[key] = savgol_filter(df[key], window, order)
+#OGI figure               
+fig_4 = three_row(f'{data_dir}/template_2mm_masked.nii.gz', 
+                  [f'{data_dir}/rogi_suvr_basal.nii.gz',
+                  f'{data_dir}/rogi_suvr_hypergly.nii.gz',
+                  f'{data_dir}/rogi_suvr_hypergly_coef.nii.gz'],
+                  f'{data_dir}/rogi_suvr_hypergly_logp_fdr_05.nii.gz',
+                  "rOGI", "SUVR",
+                  over_titles=['rOGI: Eugly', 'Hyper.', 'Hyper. - Eugly.'],
+                  over_range = [[0.6, 1.5], [0.6, 1.5], [-0.5, 0.5]], 
+                  over_thresh = [False, False, True],
+                  over_palettes = ['Plasma', 'Plasma', 'RdBu'],
+                  over_mode = ['absolue', 'absolute', 'absolute'])
 
-    return ColumnDataSource(data=df)
+#CBF Figure
+fig_5 = three_row(f'{data_dir}/template_2mm_masked.nii.gz', 
+                  [f'{data_dir}/ho_suvr_basal.nii.gz',
+                  f'{data_dir}/ho_suvr_hypergly_coef.nii.gz'],
+                  f'{data_dir}/ho_suvr_hypergly_logp_fdr_05.nii.gz',
+                  "CBF", "SUVR",
+                  over_titles=['CBF: Eugly', 'Hyper. - Eugly.'],
+                  info_path=f'{data_dir}/ho_suvr_info.csv',
+                  reg_path=f'{data_dir}/all_ho_suvr_po.nii.gz',
+                  over_range = [[0.4, 1.4], [-0.1, 0.1]], 
+                  over_thresh = [False, True],
+                  over_palettes = ['Plasma', 'RdBu'],
+                  over_mode = ['absolue', 'absolute'],
+                  roi_path=f'{data_dir}/winner_wmparc_comb_on_MNI152_2mm_masked.nii.gz',
+                  names_path=f'{data_dir}/wmparc_names.txt')
 
-def make_plot(source, title):
-    plot = figure(x_axis_type="datetime", plot_width=800, tools="", toolbar_location=None)
-    plot.title.text = title
+#Create tabs
+tab_1 = TabPanel(child=figure_one(data_dir), title="Figure 1")
+tab_2 = TabPanel(child=fig_2, title="Figure 2")
+tab_3 = TabPanel(child=fig_3, title="Figure 3")
+tab_4 = TabPanel(child=fig_4, title="Figure 4")
+tab_5 = TabPanel(child=fig_5, title="Figure 5")
+tab_6 = TabPanel(child=figure_six(data_dir), title="Figure 6")
+tab_7 = TabPanel(child=figure_seven(data_dir), title="Figure 7")
 
-    plot.quad(top='record_max_temp', bottom='record_min_temp', left='left', right='right',
-              color=Blues4[2], source=source, legend="Record")
-    plot.quad(top='average_max_temp', bottom='average_min_temp', left='left', right='right',
-              color=Blues4[1], source=source, legend="Average")
-    plot.quad(top='actual_max_temp', bottom='actual_min_temp', left='left', right='right',
-              color=Blues4[0], alpha=0.5, line_color="black", source=source, legend="Actual")
+#Create css
+tab_css = ":host(.bk-Tabs) .bk-header {font-size: 36px; font-weight: bold; border-color:black}"
+act_css = ":host{.bk-Tabs} .bk-tab.bk-active {background-color:#D3D3D3; font-color: black; border-color:black}"
+bor_css = ":host{.bk-Tabs} .bk-tab {border-color:black}"
 
-    # fixed attributes
-    plot.xaxis.axis_label = None
-    plot.yaxis.axis_label = "Temperature (F)"
-    plot.axis.axis_label_text_font_style = "bold"
-    plot.x_range = DataRange1d(range_padding=0.0)
-    plot.grid.grid_line_alpha = 0.3
+#Show app
+tab_list = [tab_1, tab_2, tab_3, tab_4, tab_5, tab_6, tab_7]
+curdoc().add_root(Tabs(tabs=tab_list, stylesheets=[tab_css, act_css, bor_css]))
 
-    return plot
 
-def update_plot(attrname, old, new):
-    city = city_select.value
-    plot.title.text = "Weather data for " + cities[city]['title']
 
-    src = get_dataset(df, cities[city]['airport'], distribution_select.value)
-    source.data.update(src.data)
 
-city = 'Austin'
-distribution = 'Discrete'
-
-cities = {
-    'Austin': {
-        'airport': 'AUS',
-        'title': 'Austin, TX',
-    },
-    'Boston': {
-        'airport': 'BOS',
-        'title': 'Boston, MA',
-    },
-    'Seattle': {
-        'airport': 'SEA',
-        'title': 'Seattle, WA',
-    }
-}
-
-city_select = Select(value=city, title='City', options=sorted(cities.keys()))
-distribution_select = Select(value=distribution, title='Distribution', options=['Discrete', 'Smoothed'])
-
-df = pd.read_csv(join(dirname(__file__), 'data/2015_weather.csv'))
-source = get_dataset(df, cities[city]['airport'], distribution)
-plot = make_plot(source, "Weather data for " + cities[city]['title'])
-
-city_select.on_change('value', update_plot)
-distribution_select.on_change('value', update_plot)
-
-controls = column(city_select, distribution_select)
-
-curdoc().add_root(row(plot, controls))
-curdoc().title = "Weather"
