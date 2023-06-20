@@ -4,8 +4,8 @@ from bokeh_utils import *
 import os
 
 #Prep
-app_dir = os.path.dirname(__file__)
-data_dir =os.path.join(app_dir, 'data')
+app_dir = os.path.dirname(os.path.realpath(__file__))
+data_dir = f'{app_dir}/data'
 
 #CMRglc figure
 fig_2 = three_row(f'{data_dir}/template_2mm_masked.nii.gz', 
